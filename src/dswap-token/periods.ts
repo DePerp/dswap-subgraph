@@ -1,6 +1,6 @@
 import {BigDecimal, BigInt, Bytes, log} from "@graphprotocol/graph-ts";
 import { CandleStick, HistoricalTokenPrice, TokenData } from "../../generated/schema";
-import { TokenPeriodData, TradeLabel, TradeType } from "./stats";
+import { TokenPeriodDataWithUSD, TradeLabel, TradeType } from "./stats";
 
 export enum PriceType {
     _MIN = 1,
@@ -43,9 +43,10 @@ export function updateOrCreateHistoricalTokenPrice(
     timestamp: BigInt, 
     tokenAddress: Bytes,
     tokenPrice: BigDecimal,
-    tokenPeriodData: TokenPeriodData = {
+    tokenPeriodData: TokenPeriodDataWithUSD = {
         volume: BigDecimal.fromString("0"),
-        type: TradeType.BUY
+        volumeUSD: BigDecimal.fromString("0"),
+        type: TradeType.BUY,
     },
 ): void {
 
@@ -62,7 +63,7 @@ function updateOrCreateHistoricalTokenPriceByType(
     type: PriceType, 
     tokenAddress: Bytes,
     tokenPrice: BigDecimal,
-    tokenPeriodData: TokenPeriodData,
+    tokenPeriodData: TokenPeriodDataWithUSD,
 ): void {
     const lastReachedTimestamp = getLastReachedTimestampByType(timestamp, type);
     const priceType = PRICES_TYPES_LABEL.get(type);
@@ -151,7 +152,7 @@ function createTokenPeriodData(
     tokenAddress: Bytes,
     priceType: PriceType,
     timestamp: BigInt,
-    tokenData: TokenPeriodData,
+    tokenData: TokenPeriodDataWithUSD,
 ): TokenData {
     const priceTypeLabel = PRICES_TYPES_LABEL.get(priceType);
     const id = tokenAddress.toHex() + priceTypeLabel + "-"+ timestamp.toString();
@@ -160,6 +161,8 @@ function createTokenPeriodData(
     tokenPeriodData.timestamp = timestamp;
     tokenPeriodData.buyVolume = BigDecimal.fromString("0");
     tokenPeriodData.sellVolume = BigDecimal.fromString("0");
+    tokenPeriodData.buyVolumeUSD = BigDecimal.fromString("0");
+    tokenPeriodData.sellVolumeUSD = BigDecimal.fromString("0");
     tokenPeriodData.buyAmount = BigInt.fromI32(0);
     tokenPeriodData.sellAmount = BigInt.fromI32(0);
 
@@ -171,14 +174,16 @@ function createTokenPeriodData(
 
 function updateTokenPeriodData(
     tokenData: TokenData,
-    tokenPeriodData: TokenPeriodData,
+    tokenPeriodData: TokenPeriodDataWithUSD,
 ): void {
     if (tokenPeriodData.type == TradeType.BUY) {
         tokenData.buyVolume = tokenData.buyVolume.plus(tokenPeriodData.volume);
         tokenData.buyAmount = tokenData.buyAmount.plus(BigInt.fromI32(1));
+        tokenData.buyVolumeUSD = tokenData.buyVolumeUSD.plus(tokenPeriodData.volumeUSD);
     } else {
         tokenData.sellVolume = tokenData.sellVolume.plus(tokenPeriodData.volume);
         tokenData.sellAmount = tokenData.sellAmount.plus(BigInt.fromI32(1));
+        tokenData.sellVolumeUSD = tokenData.sellVolumeUSD.plus(tokenPeriodData.volumeUSD);
     }
     tokenData.save();
 }

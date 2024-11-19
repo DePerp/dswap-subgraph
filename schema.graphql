@@ -45,6 +45,9 @@ type TokenData @entity {
   buyVolume: BigDecimal!
   sellVolume: BigDecimal!
 
+  buyVolumeUSD: BigDecimal!
+  sellVolumeUSD: BigDecimal!
+
   buyAmount: BigInt!
   sellAmount: BigInt!
 

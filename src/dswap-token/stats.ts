@@ -13,3 +13,9 @@ export class TokenPeriodData {
     volume: BigDecimal;
     type: TradeType;
 }
+
+export class TokenPeriodDataWithUSD {
+    volumeUSD: BigDecimal;
+    volume: BigDecimal;
+    type: TradeType;
+}

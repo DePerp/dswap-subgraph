@@ -3,7 +3,7 @@ import { Bundle, DSwapToken, HistoricalTokenPrice, TokenData } from "../../gener
 import { TokensPurchased as TokensPurchasedEvent, TokensSold as TokensSoldEvent } from "../../generated/templates/DSwapToken/DSwap";
 import { formatPrice, getPrice } from "../utils/price";
 import { getLastReachedTimestampByType, updateOrCreateHistoricalTokenPrice, PriceType } from "./periods";
-import { TokenPeriodData, TradeLabel, TradeType } from "./stats";
+import { TokenPeriodData, TokenPeriodDataWithUSD, TradeLabel, TradeType } from "./stats";
 
 export function handleTokensPurchased(event: TokensPurchasedEvent): void {
     helperTokensChanged(event.address, event.block.timestamp, {
@@ -48,10 +48,16 @@ function helperTokensChanged(address: Bytes, timestamp: BigInt, tokenData: Token
     dswapToken.initialPrice = sqrtTokenPrice;
     dswapToken.save();
 
+    const formattedTokenDataVolume = formatPrice(tokenData.volume, BigInt.fromI32(18));
+
     updateOrCreateHistoricalTokenPrice(
         timestamp, 
         address, 
         tokenPrice,
-        tokenData
+        {
+            volume: tokenData.volume,
+            type: tokenData.type,
+            volumeUSD: formattedTokenDataVolume.times(tokenPrice)
+        }
     );
 }
