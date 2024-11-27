@@ -1,20 +1,33 @@
 import { Address, BigInt } from "@graphprotocol/graph-ts";
 import { Factory as FactoryABI } from "../../generated/Factory/Factory";
 import { DSwapToken } from "../../generated/schema";
-
 export class TokenInfo {
-   name: string;
+    name: string;
     symbol: string;
     iconIPFS: string;
+
+    constructor() {
+        this.name = "";
+        this.symbol = "";
+        this.iconIPFS = "";
+    }
 }
 
 export function getTokenInfo(count: BigInt, factoryAddress: Address): TokenInfo {
     const tokenContract = FactoryABI.bind(factoryAddress);
-    const tokenInfo = tokenContract.getDeploymentInfo(count);
+    
+    // Create new TokenInfo instance with default values
+    let tokenInfo = new TokenInfo();
 
-    return {
-        name: tokenInfo.name,
-        symbol: tokenInfo.symbol,
-        iconIPFS: tokenInfo.tokenIconIPFS,
-    };
+    // Use try_getDeploymentInfo instead of direct call
+    let deploymentInfoResult = tokenContract.try_getDeploymentInfo(count);
+    
+    if (!deploymentInfoResult.reverted) {
+        const result = deploymentInfoResult.value;
+        tokenInfo.name = result.name;
+        tokenInfo.symbol = result.symbol;
+        tokenInfo.iconIPFS = result.tokenIconIPFS;
+    }
+
+    return tokenInfo;
 }
